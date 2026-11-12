@@ -1,0 +1,16 @@
+{
+  "name": "smallproject-risk-register",
+  "version": "1.0.0",
+  "description": "SmallProject Risk Register: a project risk tracker with likelihood x impact scoring, backed by MongoDB",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "mongoose": "^8.9.0"
+  }
+}

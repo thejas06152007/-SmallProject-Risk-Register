@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SmallProject Risk Register</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Schibsted+Grotesk:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1>SmallProject Risk Register</h1>
+      <p class="sub">Track what could go wrong on a student or small business project, rank it by likelihood × impact, and keep every risk owned and reviewed.</p>
+    </div>
+    <div class="actions">
+      <button class="btn" id="btnExport" type="button">Export CSV</button>
+      <button class="btn primary" id="btnAdd" type="button">Add risk</button>
+    </div>
+  </header>
+
+  <div class="banner" id="banner" hidden>
+    <p>The rows marked as examples show how a register looks for a final-year web app. Edit them, or clear them and start with your own.</p>
+    <button class="btn small" id="btnClearEx" type="button">Clear examples</button>
+  </div>
+
+  <section class="strip" aria-label="Summary" id="strip"></section>
+
+  <div class="two">
+    <section class="panel" aria-labelledby="mxh">
+      <div class="panel-head">
+        <h2 id="mxh">Heat matrix</h2>
+        <span class="hint">Open and mitigating risks. Select a cell to filter the register.</span>
+      </div>
+      <div class="matrix" id="matrix"></div>
+    </section>
+
+    <section class="panel" aria-labelledby="keyh">
+      <div class="panel-head"><h2 id="keyh">How the score works</h2></div>
+      <p class="formula">Score = Likelihood × Impact</p>
+      <div class="bands" id="bands"></div>
+      <div class="scales">
+        <div><h3>Likelihood</h3><dl id="likKey"></dl></div>
+        <div><h3>Impact</h3><dl id="impKey"></dl></div>
+      </div>
+      <p class="tie">Both ratings run from 1 to 5, so scores run from 1 to 25. Equal scores rank by higher impact first, then by the earlier review date. Closed risks are not ranked.</p>
+    </section>
+  </div>
+
+  <section class="panel" aria-labelledby="regh">
+    <div class="panel-head">
+      <h2 id="regh">Register</h2>
+      <span class="hint" id="regCount"></span>
+    </div>
+    <div class="filters">
+      <div class="f grow"><label for="qSearch">Search</label><input type="search" id="qSearch" placeholder="Risk, mitigation or owner"></div>
+      <div class="f"><label for="fStatus">Status</label>
+        <select id="fStatus"><option value="all">All statuses</option><option>Open</option><option>Mitigating</option><option>Closed</option></select></div>
+      <div class="f"><label for="fBand">Rating</label>
+        <select id="fBand"><option value="all">All ratings</option><option value="critical">Critical (15-25)</option><option value="high">High (10-14)</option><option value="medium">Medium (5-9)</option><option value="low">Low (1-4)</option></select></div>
+      <div class="f"><label for="fOwner">Owner</label><select id="fOwner"></select></div>
+      <div class="f"><label for="fSort">Sort by</label>
+        <select id="fSort"><option value="score">Priority score</option><option value="review">Review date</option><option value="owner">Owner</option></select></div>
+    </div>
+    <div id="chips" style="margin-bottom:12px" hidden></div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Rank</th><th>Risk</th><th class="c" title="Likelihood, 1 to 5">L</th><th class="c" title="Impact, 1 to 5">I</th>
+            <th>Score</th><th>Mitigation</th><th>Owner</th><th>Review date</th><th>Status</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+    <p class="count-note" id="note"></p>
+  </section>
+</div>
+
+<!-- Add / edit form -->
+<div class="overlay" id="formOverlay" hidden>
+  <form class="modal" id="riskForm" novalidate role="dialog" aria-modal="true" aria-labelledby="formTitle">
+    <h2 id="formTitle">Add risk</h2>
+    <div class="grid">
+      <div class="field full">
+        <label for="fTitle">Risk</label>
+        <input type="text" id="fTitle" maxlength="120" placeholder="What could go wrong?" autocomplete="off">
+        <p class="err" data-for="fTitle" hidden></p>
+      </div>
+      <div class="field full">
+        <label for="fDesc">Details <span class="opt">(optional)</span></label>
+        <textarea id="fDesc" maxlength="400" placeholder="What causes it and what would happen?"></textarea>
+      </div>
+      <div class="field"><label for="fCat">Category</label><select id="fCat"></select></div>
+      <div class="field"><label for="fStat">Status</label><select id="fStat"></select></div>
+      <div class="field"><label for="fLik">Likelihood</label><select id="fLik"></select></div>
+      <div class="field"><label for="fImp">Impact</label><select id="fImp"></select></div>
+      <div class="preview" aria-live="polite">
+        <span class="hint">Priority score</span>
+        <span class="eq" id="eq"></span>
+        <span id="eqPill"></span>
+      </div>
+      <div class="field full">
+        <label for="fMit">Mitigation</label>
+        <textarea id="fMit" maxlength="400" placeholder="What will you do to lower the likelihood or the impact?"></textarea>
+        <p class="err" data-for="fMit" hidden></p>
+      </div>
+      <div class="field">
+        <label for="fOwner2">Owner</label>
+        <input type="text" id="fOwner2" maxlength="60" list="ownerList" placeholder="Who is responsible?" autocomplete="off">
+        <datalist id="ownerList"></datalist>
+        <p class="err" data-for="fOwner2" hidden></p>
+      </div>
+      <div class="field">
+        <label for="fDate">Next review date</label>
+        <input type="date" id="fDate">
+        <p class="err" data-for="fDate" hidden></p>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn" type="button" id="btnCancel">Cancel</button>
+      <button class="btn primary" type="submit" id="btnSave">Save risk</button>
+    </div>
+  </form>
+</div>
+
+<!-- Export -->
+<div class="overlay" id="exportOverlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="exTitle">
+    <h2 id="exTitle">Export as CSV</h2>
+    <p class="hint">Copy this text into a file named risk-register.csv, or paste it straight into Excel or Google Sheets.</p>
+    <textarea class="csv" id="csvText" readonly aria-label="CSV text"></textarea>
+    <div class="modal-foot">
+      <button class="btn" type="button" id="btnExClose">Close</button>
+      <button class="btn primary" type="button" id="btnExCopy">Copy to clipboard</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
